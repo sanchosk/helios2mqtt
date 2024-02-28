@@ -1,0 +1,88 @@
+	// unit serial number
+	// VlxDevConstants.A_CYC_SERIAL_NUMBER_MSW = 14
+	// VlxDevConstants.A_CYC_SERIAL_NUMBER_LSW = 15
+	// offset is 14 and 15, the number is in big endian format 4 bytes
+	var serialNumber = data[14 * 2] * 16777216 + data[14 * 2 + 1] * 65536 + data[15 * 2] * 256 + data[15 * 2 + 1];
+	
+	// fan speed should be setting 4353 (VlxDevConstants.A_CYC_FAN_SPEED)
+	// offset: 64 accodring IoGlobal.calculateOffset(4353)
+	// as the data is 16-bit big-endian, we need position 64*2+1
+	var fanSpeed = data[129];
+
+	// outdoor air temp should be 4356 (VlxDevConstants.A_CYC_FAN_SPEED)
+	// offset: 67 according to IoGlobal...
+	// as the data is 16-bit big-endian, we need position 67*2+1
+	// calculation is made in 2 bytes, multiplied by 100 and in Kelvin
+	var outTemp = dataToCelsius(data, 67);
+
+        // supply air temp should be 4358 (VlxDevConstants.A_CYC_TEMP_SUPPLY_AIR)
+        // offset: 69 according to IoGlobal...
+        // calculation is made in 2 bytes, multiplied by 100 and in Kelvin
+        var supTemp = dataToCelsius(data, 69);
+
+        // indoor air temp should be 4354 (VlxDevConstants.A_CYC_TEMP_EXTRACT_AIR)
+        // offset: 65 according to IoGlobal...
+        // calculation is made in 2 bytes, multiplied by 100 and in Kelvin
+        var indTemp = dataToCelsius(data, 65);
+
+        // exhaust air temp should be 4354 (VlxDevConstants.A_CYC_TEMP_EXHAUST_AIR)
+        // offset: 66 according to IoGlobal...
+        // calculation is made in 2 bytes, multiplied by 100 and in Kelvin
+        var exhTemp = dataToCelsius(data, 66);
+
+	// filter change date
+	// VlxDevConstants.A_CYC_FILTER_CHANGED_DAY = 20546
+	// offset 248
+	// VlxDevConstants.A_CYC_FILTER_CHANGED_MONTH = 20547
+	// offset 249
+	// VlxDevConstants.A_CYC_FILTER_CHANGED_YEAR = 20548
+	// offset 250
+	//
+	var filterChanged = new Date(2000 + data[250 * 2 + 1], data[249 * 2 + 1] - 1, data[248 * 2 + 1], 12, 0); // using 2 hours to offset the timezone
+
+	// current device state - we need A_CYC_STATE (Y), A_CYC_FIREPLACE_TIMER (u), A_CYC_BOOST_TIMER (v)
+	// offsets: 107, 111, 110
+	// the status is calculated:
+	// IF fireplace timer is 0 and boost timer is 0 and state is 0 => 0
+	// IF fireplace timer is not 0 => 3
+	// IF boost timer is not 0 => 2
+	// IF state is not 0 => 1
+	// eq: a = 0 == u ? 0 == v ? 0 == Y ? 0 : 1 : 2 : 3
+	var state = data[107 * 2 + 1];
+	var fire  = data[111 * 2 + 1];
+	var boost = data[110 * 2 + 1];
+
+	var devState = 0 == fire ? 0 == boost ? 0 == state ? 'At home' : 'Away' : 'Boost' : 'Fireplace';
+
+
+	// filter change interval interval var C = E(VlxDevConstants.A_CYC_FILTER_CHANGE_INTERVAL) / 30;
+	// VlxDevConstants.A_CYC_FILTER_CHANGE_INTERVAL is 20537, offset is 239
+	var filterInterval = data[239 * 2 + 1] / 30;
+
+	// relative humidity of air VlxDevConstants.A_CYC_RH_VALUE = 4363 offset 74
+	var airRH = data[74 * 2 + 1];
+
+	// device type
+	// VlxDevConstants.A_CYC_MACHINE_TYPE = 16
+	// device model
+	// VlxDevConstants.A_CYC_MACHINE_MODEL = 17
+	var deviceModel = TextMap.device_model_data[data[17 * 2 + 1]];
+	var deviceType  = TextMap.device_type_data[data[16 * 2 + 1]];
+
+	// calculating next filter date
+	var filterDue = new Date(filterChanged.getFullYear(), filterChanged.getMonth() + filterInterval, filterChanged.getDate(), 0, 0);
+	
+	console.log(deviceModel);
+	console.log(deviceType);
+	console.log(serialNumber);
+	console.log(fanSpeed);
+	console.log(outTemp);
+	console.log(supTemp);
+	console.log(indTemp);
+	console.log(exhTemp);
+	console.log(filterChanged);
+	console.log(filterInterval);
+	console.log(filterDue);
+	console.log(devState);
+	console.log(airRH);
+
