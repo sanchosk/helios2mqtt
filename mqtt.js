@@ -17,7 +17,7 @@ var filterDue = "";
 var airRH = "";
 
 function createHAsingle(payload) {
-    client.publish('homeassistant/sensor/' + payload.unique_id + '/config', JSON.stringify(payload), { qos: 0, retain: false }, (error) => {
+    client.publish('homeassistant/sensor/' + payload.unique_id + '/config', JSON.stringify(payload), { qos: 0, retain: true }, (error) => {
         if (error) {
             console.log(error);
         } else {
